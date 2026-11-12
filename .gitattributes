@@ -1,0 +1,8 @@
+# Shell scripts must keep LF line endings on every platform, including
+# Windows checkouts: a CRLF in a .sh file breaks it under WSL/Linux/macOS.
+*.sh  text eol=lf
+
+# Windows batch files expect CRLF.
+*.cmd text eol=crlf
+
+*.md  text eol=lf
