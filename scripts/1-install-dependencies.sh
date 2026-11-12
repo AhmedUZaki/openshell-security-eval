@@ -102,11 +102,19 @@ install_nemoclaw() {
   have node || fail "Node.js is required for NemoClaw. Install Node 20+ and re-run."
   log "Fetching the pinned NemoClaw source into $SOURCE_DIR"
   if [[ -d "$SOURCE_DIR/.git" ]]; then
-    git -C "$SOURCE_DIR" fetch --depth 1 origin "v$NEMOCLAW_VERSION" || git -C "$SOURCE_DIR" fetch --depth 1 origin
+    git -C "$SOURCE_DIR" fetch --depth 1 origin "v$NEMOCLAW_VERSION" \
+      || fail "Could not fetch tag v$NEMOCLAW_VERSION from $NEMOCLAW_REPO."
   else
     mkdir -p "$(dirname "$SOURCE_DIR")"
-    git clone --depth 1 "$NEMOCLAW_REPO" "$SOURCE_DIR"
+    git clone --no-checkout --depth 1 "$NEMOCLAW_REPO" "$SOURCE_DIR" \
+      || fail "Could not clone $NEMOCLAW_REPO into $SOURCE_DIR."
+    git -C "$SOURCE_DIR" fetch --depth 1 origin "v$NEMOCLAW_VERSION" \
+      || fail "Could not fetch tag v$NEMOCLAW_VERSION from $NEMOCLAW_REPO."
   fi
+  # Pin the working tree to the fetched tag itself, not just whatever ref the
+  # remote's default branch happens to point to at fetch time.
+  git -C "$SOURCE_DIR" checkout -q --detach FETCH_HEAD \
+    || fail "Could not check out tag v$NEMOCLAW_VERSION in $SOURCE_DIR."
   export NEMOCLAW_NON_INTERACTIVE=1
   export NEMOCLAW_ACCEPT_THIRD_PARTY_SOFTWARE=1
   log "Installing the NemoClaw CLI (deferring onboarding)"

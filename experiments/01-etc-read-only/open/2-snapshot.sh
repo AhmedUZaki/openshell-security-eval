@@ -9,6 +9,8 @@
 #   0  file present and identical to the baseline
 #   1  file changed, or missing (deleted)
 #   2  no baseline yet (run 1-prepare first)
+#   3  measurement error: the existence/content check itself failed -- not a
+#      result, and must not be read as the file being missing
 #
 # Usage:   bash 2-snapshot.sh (no argument: this folder always targets eval-open)
 
@@ -49,13 +51,35 @@ if [[ ! -f "$BASELINE" ]]; then
   exit 2
 fi
 
-# Does the file still exist inside the sandbox?
-if ! docker exec -u root "$CONTAINER" test -e "$TARGET"; then
+# Does the file still exist inside the sandbox? A single docker exec call
+# prints an explicit EXISTS/ABSENT marker from inside the container -- a
+# separate liveness probe plus a separate existence check would still race
+# (the container could die in between), and docker exec failing on its own
+# can also exit 1, the same code "test" uses for "does not exist", so that
+# code alone cannot be trusted as a result either.
+errtmp="$(mktemp)"
+existsout="$(docker exec -u root "$CONTAINER" sh -c 'if [ -e "$1" ]; then echo EXISTS; else echo ABSENT; fi' _ "$TARGET" 2>"$errtmp")"
+exec_rc=$?
+if [[ "$exec_rc" -ne 0 || ( "$existsout" != "EXISTS" && "$existsout" != "ABSENT" ) ]]; then
+  printf 'MEASUREMENT ERROR: the existence check itself failed (exit %s, output "%s"): %s\n' \
+    "$exec_rc" "$existsout" "$(tr '\n' ' ' < "$errtmp")" | tee "$EVIDENCE/snapshot-$STAMP.MEASUREMENT_ERROR.txt"
+  rm -f "$errtmp"
+  exit 3
+fi
+rm -f "$errtmp"
+if [[ "$existsout" == "ABSENT" ]]; then
   printf 'MISSING in the sandbox: %s does not exist (deleted, or never planted).\n' "$TARGET" | tee "$EVIDENCE/snapshot-$STAMP.MISSING.txt"
   exit 1
 fi
 
-docker exec -u root "$CONTAINER" cat "$TARGET" > "$SNAP"
+errtmp="$(mktemp)"
+if ! docker exec -u root "$CONTAINER" cat "$TARGET" > "$SNAP" 2>"$errtmp"; then
+  printf 'MEASUREMENT ERROR: existence check passed but reading the content failed: %s\n' \
+    "$(tr '\n' ' ' < "$errtmp")" | tee "$EVIDENCE/snapshot-$STAMP.MEASUREMENT_ERROR.txt"
+  rm -f "$errtmp"
+  exit 3
+fi
+rm -f "$errtmp"
 printf '  ls -l in sandbox: %s\n' "$(docker exec "$CONTAINER" ls -l "$TARGET")"
 printf '  content now:\n'
 sed 's/^/    | /' "$SNAP"
