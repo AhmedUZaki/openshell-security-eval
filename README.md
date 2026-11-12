@@ -2,8 +2,10 @@
 
 Red-team evaluation of NVIDIA OpenShell's policy enforcement. We take the enforcement guarantees NVIDIA documents for OpenShell — network policy, filesystem policy, the policy tiers, and Landlock — and test, on real sandboxes, whether they actually hold.
 
+- [REPORT.md](REPORT.md) — current status: project direction, what's built, results so far, and what's left.
 - [docs/CLAIMS.md](docs/CLAIMS.md) — every documented claim we intend to test, each sourced to its exact live NVIDIA doc URL. This is the starting point.
 - [docs/VERSIONS.md](docs/VERSIONS.md) — the exact environment (versions, model, GPU) the findings are tested against.
+- [experiments/](experiments/) — one folder per experiment, each with its own scripts and `evidence/`. Start with [01-etc-read-only](experiments/01-etc-read-only/README.md). See [experiments/TODO.md](experiments/TODO.md) for planned future experiments.
 
 ## Usage, in order
 

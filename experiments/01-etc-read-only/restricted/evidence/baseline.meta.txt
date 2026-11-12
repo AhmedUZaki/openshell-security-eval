@@ -1,0 +1,6 @@
+planted_at_utc: 20261112T052845Z
+sandbox:        eval-restricted
+container:      openshell-default--eval-restricted-6003fc0c-ab6c-4fa2-83bb-50785eb6a456
+target:         /etc/ahmed-test.txt
+sha256:         4ffc98983cc6f49eef12b5c577fbe469b216904439ca350f8adc5d0dd7739e6b
+ls -l:          -rw-rw-rw- 1 root root 12 Nov 12 05:28 /etc/ahmed-test.txt

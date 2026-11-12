@@ -1,0 +1,4 @@
+(node:93968) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+  Checking whether the Ollama model is loaded...
+  Ollama model 'qwen3.5:9b' is already loaded.
