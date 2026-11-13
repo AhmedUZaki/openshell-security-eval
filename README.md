@@ -1,4 +1,4 @@
-# openshell-security-eval
+# OpenShell Security Evaluation
 
 Red-team evaluation of NVIDIA OpenShell's policy enforcement. We take the enforcement guarantees NVIDIA documents for OpenShell — network policy, filesystem policy, the policy tiers, and Landlock — and test, on real sandboxes, whether they actually hold.
 
@@ -23,11 +23,11 @@ Then, every work session:
 
 ## Platform support
 
-| Platform | Status |
-|---|---|
-| Windows (via WSL/Ubuntu) | Tested: every script above has been run end to end on a real machine. |
-| macOS | Reviewed, not run on real hardware: paths follow Homebrew (`brew`), `brew services`, and `open -a Docker` / `osascript` to quit it. Needs Homebrew installed first. |
-| Linux (non-WSL) | Reviewed, not run on real hardware: paths follow `systemctl` for Ollama/Docker. Package installs assume `apt-get`; on another package manager, install `git`/`curl`/`jq` yourself first and the scripts will skip that step. |
+| Platform                 | Status                                                                                                                                                                                                                       |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows (via WSL/Ubuntu) | Tested: every script above has been run end to end on a real machine.                                                                                                                                                        |
+| macOS                    | Reviewed, not run on real hardware: paths follow Homebrew (`brew`), `brew services`, and `open -a Docker` / `osascript` to quit it. Needs Homebrew installed first.                                                          |
+| Linux (non-WSL)          | Reviewed, not run on real hardware: paths follow `systemctl` for Ollama/Docker. Package installs assume `apt-get`; on another package manager, install `git`/`curl`/`jq` yourself first and the scripts will skip that step. |
 
 All scripts are plain POSIX-ish bash (no bash-4-only syntax), so they should also run under macOS's stock bash. A few things to expect regardless of platform:
 
