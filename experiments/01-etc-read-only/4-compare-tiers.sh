@@ -28,18 +28,19 @@ latest_dir() {
   ls -d "$HERE/$tier/evidence/attempts/"*"-$task" 2>/dev/null | sort | tail -n 1
 }
 
-# Prints the recorded state (UNCHANGED/MODIFIED/EMPTIED/DELETED/MEASUREMENT_ERROR),
-# or the literal string "NO_DATA" if this tier/task was never run, or if a
-# summary.line exists but is empty/malformed (awk succeeds and prints nothing
-# in that case, which must not silently read as an empty string that then
-# compares "equal" across tiers). NO_DATA is a missing-evidence marker, never
-# a real result, so it must never be compared against other tiers' results.
+# Prints the recorded state (UNCHANGED/MODIFIED/EMPTIED/DELETED/
+# MEASUREMENT_ERROR/AGENT_RUN_ERROR), or the literal string "NO_DATA" if this
+# tier/task was never run, or if a summary.line exists but is empty/malformed
+# (awk succeeds and prints nothing in that case, which must not silently read
+# as an empty string that then compares "equal" across tiers). NO_DATA is a
+# missing-evidence marker, never a real result, so it must never be compared
+# against other tiers' results.
 latest_state() {
   local dir s; dir="$(latest_dir "$1" "$2")"
   [[ -n "$dir" ]] || { printf 'NO_DATA'; return; }
   s="$(awk -F' \\| ' '{print $2}' "$dir/summary.line" 2>/dev/null)"
   case "$s" in
-    UNCHANGED|EMPTIED|MODIFIED|DELETED|MEASUREMENT_ERROR) printf '%s' "$s" ;;
+    UNCHANGED|EMPTIED|MODIFIED|DELETED|MEASUREMENT_ERROR|AGENT_RUN_ERROR) printf '%s' "$s" ;;
     *) printf 'NO_DATA' ;;
   esac
 }
@@ -83,12 +84,14 @@ for task in "${TASKS[@]}"; do
       [[ -z "$w" ]] && status="INCOMPLETE (missing data)"
     done
   fi
-  # MEASUREMENT_ERROR is a failed check, not a result -- it must not be
-  # compared against other tiers' states as if it were one (an agreeing OR a
-  # disagreeing MEASUREMENT_ERROR is equally meaningless).
+  # MEASUREMENT_ERROR (the post-attempt check itself failed) and
+  # AGENT_RUN_ERROR (the agent command itself failed before attempting the
+  # task) are both failed runs, not results -- neither must be compared
+  # against other tiers' states as if it were one (an agreeing OR a
+  # disagreeing error is equally meaningless).
   if [[ "$status" == "consistent" ]]; then
     for s in "${states[@]}"; do
-      [[ "$s" == "MEASUREMENT_ERROR" ]] && status="INCONCLUSIVE (measurement error on at least one tier)"
+      [[ "$s" == "MEASUREMENT_ERROR" || "$s" == "AGENT_RUN_ERROR" ]] && status="INCONCLUSIVE (run or measurement error on at least one tier)"
     done
   fi
   if [[ "$status" == "consistent" ]]; then
@@ -120,9 +123,10 @@ if [[ "$INCOMPLETE" -gt 0 ]]; then
   printf 'conclusion from this table.\n\n'
 fi
 if [[ "$INCONCLUSIVE" -gt 0 ]]; then
-  printf '%d task(s) are INCONCLUSIVE: the post-attempt file check itself failed on at\n' "$INCONCLUSIVE"
-  printf 'least one tier (see that attempt'"'"'s result.txt for the reason). This is not\n'
-  printf 'evidence either way and must not be read as a result for that tier.\n\n'
+  printf '%d task(s) are INCONCLUSIVE: either the agent command itself failed before\n' "$INCONCLUSIVE"
+  printf 'attempting the task, or the post-attempt file check failed, on at least one tier\n'
+  printf '(see that attempt'"'"'s result.txt for the reason). This is not evidence either way\n'
+  printf 'and must not be read as a result for that tier.\n\n'
 fi
 if [[ "$WORDING_MISMATCH" -gt 0 ]]; then
   printf '%d task(s) used DIFFERENT task wording across tiers (see each tier'"'"'s task.txt):\n' "$WORDING_MISMATCH"

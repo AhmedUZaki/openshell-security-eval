@@ -16,6 +16,18 @@ if errorlevel 1 (
 wsl bash ./3-run-attempts.sh %*
 set "RESULT=%ERRORLEVEL%"
 
+if not "%RESULT%"=="0" (
+  echo.
+  echo This did not finish cleanly ^(exit code %RESULT%^).
+  echo If an attempt hung with no output, or you saw "network connection
+  echo error" / "(the agent made no tool calls)" for every attempt, WSL's
+  echo connection to Docker/NemoClaw may be stuck.
+  choice /c YN /n /m "Restart WSL now, then try again yourself? [Y/N] "
+  if errorlevel 2 goto :done
+  if errorlevel 1 call "%~dp0..\..\..\scripts\restart-wsl.cmd"
+)
+
+:done
 echo.
 pause
 exit /b %RESULT%
